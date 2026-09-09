@@ -40,15 +40,16 @@ decides, not the model.
 
 ### 3. Execute
 
-Only ZIFFER runs a granted action, and it re-issues that action with its own
-credential.
+The executor runs on your side, and it runs a granted action only on a
+verified receipt.
 
-- Your systems accept actions only from ZIFFER's identity: one scoped
-  credential per system.
-- Your auditor can test the boundary. Send the same call around ZIFFER and
-  watch it fail. That is a wall, not an alert.
-- What was granted is exactly what ran. ZIFFER recomputes the action at
-  execution and never trusts the message.
+- ZIFFER holds none of your credentials, your data or your keys. The
+  executor keeps them, in your environment, and refuses to act without a
+  receipt that verifies against the policy you signed.
+- Your auditor can test the boundary. Send the same call without a receipt
+  and watch the executor refuse. That is a wall, not an alert.
+- What was granted is exactly what ran. The executor recomputes the action
+  from the receipt's bytes and never trusts the message.
 
 ### 4. Prove
 
@@ -95,29 +96,21 @@ architecture leaves no other outcome available.
 - **History nobody can rewrite.** Clause `AU-9(3)`. The ledger only appends,
   anchored externally before an irreversible action releases.
 
-## The open specification
+## The specification
 
-ZIFFER is built on an open specification, and the specification is published
-with the evidence about it. The repository ships four things: the specification
-text, machine-checked proofs, a reference implementation, and public
-conformance and attack suites.
+The specification is public: the decision rules, the wire schemas and the
+conformance vectors, at https://github.com/ziffer-hq/ziffer-spec, under the
+ZIFFER Specification Licence. Read it, copy it verbatim, implement it in
+software that interoperates with ZIFFER.
 
-Every claim replays on your machine:
+The repository is generated from the engine at a named commit, and
+`PROVENANCE.json` lists every file with its hash. The engine, the reference
+implementation and the test evidence are not published: what your auditor
+needs is the receipt format and a verifier, and both are yours to run without
+us.
 
-```bash
-./tools/verify.sh --suites
-```
-
-That gate runs the proofs, the suites and the harness. It needs no key from us,
-and it is green at every commit. The mutation suites are the ones worth
-reading: each security check is deleted in turn and the matching attack has to
-succeed, which is how you know the check does something and the test is not
-vacuous.
-
-The licence, as that repository's README states it: Apache-2.0. © 2026 Code75
-SASU, Yacine Kellib.
-
-Repository: https://github.com/yacine-kellib/agent-control-plane
+Versions through v1.3.19 were published under the name ACP under Apache-2.0.
+Nothing since is. ZIFFER is a registered trademark of code75 SASU.
 
 ## What we do not claim
 
@@ -126,20 +119,18 @@ manipulated from end to end and still change nothing, because it holds nothing.
 That is the whole claim, and it is narrower than it sounds.
 
 Nobody independent has checked us yet. No third party has run an adversarial
-review, and we would rather write that here than let you discover it. The
-specification repository names that review as its largest open gap.
+review, and we would rather write that here than let you discover it.
 
-What you can check today without us: the open specification, the reference
-implementation under Apache 2.0, the attack suites that replay on your laptop
-with each control deleted in turn, and the residual-risk file we published
-before the claims.
+What you can check today without us: the specification, its schemas and
+vectors, and any receipt ZIFFER issued, verified with the published format
+against the policy you signed.
 
 ## Links
 
 - Site: https://ziffer.io
 - Docs: https://ziffer.io/docs
 - Blog: https://ziffer.io/blog
-- The open specification: https://github.com/yacine-kellib/agent-control-plane
+- The specification: https://github.com/ziffer-hq/ziffer-spec
 - A sign-off review, thirty minutes, by email:
   [hello@ziffer.io](mailto:hello@ziffer.io?subject=Sign-off%20review)
 
