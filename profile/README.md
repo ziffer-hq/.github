@@ -9,6 +9,25 @@ A sentence inside any of them becomes an instruction, and the model has no way t
 Assume the injection works: OWASP LLM01:2025 records that no fool-proof prevention of prompt injection is known, and the UK NCSC wrote on 2025-12-10 that it may never close the way SQL injection did.
 The question left on your desk is not whether an agent gets injected. It is what an injected agent can do.
 
+## Where this bites
+
+In each case an agent proposes something consequential and nothing between
+the model and the effect can refuse.
+
+| Setting | The action an agent takes | What goes wrong with nothing in between | What ZIFFER does |
+|---|---|---|---|
+| **Cloud and infrastructure ops** | Modify a firewall rule, rotate a key, terminate instances, apply infrastructure as code | A poisoned ticket or log line becomes a production change. The agent had the credential, so the change is "authorised". | The risk of the action comes from your signed policy, not from the request. A firewall change on the production database is HIGH: two named humans sign it or it does not run. |
+| **Finance and payments** | Release a payment, change payee details, approve an invoice | Invoice-fraud text in a PDF the agent summarises redirects a transfer. No human ever saw the change. | An irreversible action needs a positive acknowledgement from someone other than the operator, signed and bound to that exact payment. Silence is never consent. |
+| **Research and lab automation** | Order a synthesis, book instrument time, release a dataset to a partner | Cross-program disclosure to a competitor. It cannot be recalled; the damage is instant and permanent. | Releasing to a partner is HIGH and irreversible by policy. A quorum is required, and the model's request is only ever a proposal. |
+| **Customer support and CRM** | Issue a refund, delete an account, export a customer list | A customer message containing instructions gets treated as an instruction. Mass action at machine speed. | Limits count executions, not decisions, and the agent's capability is checked again at execution time, not only when it asked. |
+| **Software delivery** | Merge, deploy, publish a package, rotate a secret | A comment in a dependency README triggers a release. Supply chain, one step removed. | The executor recomputes the risk and rehashes the artifact. Approval covers the exact bytes deployed, not a similar request. |
+| **Healthcare and clinical** | Amend a record, submit to a regulator, release trial data | Regulated data integrity failure; the audit trail is rewritten after the fact. | The audit chain is anchored externally before the action releases. A rewrite after the anchor is detectable, never silent. |
+| **Legal and contracts** | Send a signed document, accept terms, file with a court | Disclosure and commitment are both irreversible. | Same class as a partner release: irreversible means a mandatory acknowledgement, bound to the action and usable once. |
+| **Any MCP or tool-calling deployment** | Whatever the server exposes | The model's output is the control signal. Tool poisoning or context poisoning becomes execution. | The model's only tool is propose. Every action is a typed proposal through one door, and the door can say no. |
+
+The model is not the problem in any of these. The authorisation is. When the
+credential is the authorisation, a manipulated agent is an authorised agent.
+
 ## How it works
 
 Five steps. The agent holds no credential at any of them.
@@ -95,6 +114,41 @@ architecture leaves no other outcome available.
   humans who signed.
 - **History nobody can rewrite.** Clause `AU-9(3)`. The ledger only appends,
   anchored externally before an irreversible action releases.
+
+## Threat model
+
+We assume the worst about every part that can be talked to, and we assume any
+single component can be compromised. The design holds anyway, or it says where
+it does not.
+
+**What we assume.** The model is manipulated. Prompt injection succeeds, every
+time, and the agent proposes exactly what the attacker wants. Beyond the model,
+any one of the policy engine, the executor, the signing service or the approval
+screen may be compromised. No single one of them is trusted to be right on its
+own: a decision is checked again by the party that acts on it.
+
+**What the design answers.** In plain words, with the full table of threat ids
+and countermeasures in section 4 of the specification.
+
+| Threat | What stops it |
+|---|---|
+| Injected instructions in anything the agent reads | The agent can only propose. A proposal outside your action catalog has no form the agent could send. |
+| A valid-looking action with harmful parameters | Risk is graded on the parameters, not only on the action name. |
+| Many small actions that add up to one large one | Session accumulators count what was executed, and a limit refuses the next one. |
+| A compromised policy engine | Every decision is a signed receipt, and the executor verifies it before acting. |
+| A compromised executor | It holds no signing key and cannot mint a receipt. Without one, your systems refuse it. |
+| Tampered or rolled-back policy | The policy bundle is signed with your own key and served by epoch. An epoch only increases; yesterday's looser rules are refused. |
+| A tampered audit trail | Records are hash-chained and anchored externally before an irreversible action releases. |
+| A replayed receipt or approval | Every receipt carries a nonce and an expiry, and a ledger consumes each one once. |
+| A lie on the approval screen | The approver signs the bytes that will run, and an independently rendered summary reaches the same humans on a second path before release. |
+| Approver fatigue by flooding | Held actions are queued apart from routine ones, and a flood is measured rather than absorbed. |
+
+**What we do not cover.** An action that is valid in form and harmful in the
+domain, such as a legitimate-looking trade or a real molecule, is not detected
+here; domain screening is a separate layer. Availability is not guaranteed.
+Compromise below the container boundary is out of scope. Exactly-once
+execution against a system that is not idempotent is not achievable without
+that system's help, and the specification says what is achievable instead.
 
 ## The specification
 
